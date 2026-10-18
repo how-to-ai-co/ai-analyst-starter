@@ -18,8 +18,8 @@ export function NumbersForms({ kpis, canLink }: { kpis: Row[]; canLink: boolean 
       {msg && <p className={`rounded-xl px-4 py-3 text-sm ${msg.ok ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-800"}`}>{msg.text}</p>}
 
       <section className="card">
-        <h2 className="font-semibold">Type today&rsquo;s numbers</h2>
-        <p className="mt-1 text-sm text-neutral-600">One number per KPI. Change the date to add an older number.</p>
+        <h2 className="font-semibold">Type a number</h2>
+        <p className="mt-1 text-sm text-neutral-600">Only for KPIs that live in no tool. Connected KPIs update themselves, so you never need this for them.</p>
         <div className="mt-4 flex flex-col gap-3">
           {kpis.map((k) => <QuickRow key={k.id} k={k} today={today} onDone={done} />)}
         </div>

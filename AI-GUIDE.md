@@ -18,26 +18,38 @@ The member pastes this on the Setup page. Generate it from the AI 301 interview.
   "sensitivity": "private",
   "accent": "#ff6719",
   "kpis": [
-    { "id": "revenue", "name": "Revenue", "format": "currency", "currency": "USD", "goodWhen": "up", "source": { "type": "manual" } },
-    { "id": "churn", "name": "Churn", "format": "percent", "goodWhen": "down", "source": { "type": "manual" } }
+    { "id": "revenue", "name": "Revenue", "format": "currency", "currency": "USD", "goodWhen": "up",
+      "target": 50000, "targetPeriod": "month", "aggregate": "sum",
+      "source": { "type": "stripe", "metric": "revenue" } },
+    { "id": "signups", "name": "Signups", "format": "number", "target": 1200, "targetPeriod": "month", "aggregate": "sum",
+      "source": { "type": "posthog", "project": "12345", "event": "user_signed_up" } },
+    { "id": "churn", "name": "Churn", "format": "percent", "goodWhen": "down", "target": 2, "targetPeriod": "month", "aggregate": "latest",
+      "source": { "type": "csv_url", "url": "https://docs.google.com/...output=csv", "dateColumn": "Date", "valueColumn": "Churn" } }
   ]
 }
 ```
 
-- `comparison`: `yesterday`, `last_week`, `last_month` or `target` (then give each KPI a `target`).
+- `comparison`: `yesterday`, `last_week`, `last_month` or `target`.
+- `target` and `targetPeriod` (`week`, `month`, `quarter`, `year`): the goal the KPI is pacing to. The dashboard and report say Ahead, On pace or Behind, and where the KPI is heading by the end of the period.
+- `aggregate`: `sum` when daily values add up to the period total (revenue, signups, orders); `latest` when the newest value is the number (churn %, cash, pipeline, subscribers). If left out, the app guesses from the name.
 - `reportDays`: `weekdays`, `daily` or `mondays`. `reportHour` is 0 to 23 in `timezone`.
 - `channel`: `email`, `slack`, `teams`, `google_chat` or `telegram`. Email needs `reportEmail`.
 - `format`: `number`, `currency` or `percent`. Use `goodWhen: "down"` for churn, costs and wait times.
-- `source`: `{ "type": "manual" }` (typed in or uploaded) or `{ "type": "csv_url", "url": "https://...", "dateColumn": "Date", "valueColumn": "Revenue" }`.
 
-## Adding a tool as a source (Stripe, HubSpot, a database...)
+## Sources (where each KPI's values come from)
 
-1. Copy `src/lib/sources/csv-url.ts` to a new file, for example `stripe.ts`.
-2. Fetch the history with the tool's narrowest read-only key, read from `connections` (for example `connections.STRIPE_API_KEY`) or `process.env`. Return `[{ date: "YYYY-MM-DD", value: number }]`.
-3. Register it in `src/lib/sources/index.ts` and set the KPI's source to `{ "type": "stripe" }`.
-4. The member saves the key on the Setup page (any name like `STRIPE_API_KEY` works) and the card switches from Sample to live.
+Connected sources refresh on their own every time the dashboard, report or bot runs. Typing is a last resort.
 
-Totals and counts only. Never pull names or personal details, especially for law, healthcare, finance, HR and education.
+| type | Metrics | Key saved on Setup | Extra fields |
+| --- | --- | --- | --- |
+| `stripe` | `revenue`, `new_customers`, `refunds` | `STRIPE_API_KEY` (restricted, read Charges and Customers) | |
+| `shopify` | `sales`, `orders` | `SHOPIFY_ADMIN_TOKEN` (custom app, read_orders) | `store`: `mystore.myshopify.com` |
+| `hubspot` | `won_amount`, `deals_won`, `new_deals`, `open_pipeline` | `HUBSPOT_TOKEN` (private app, crm.objects.deals.read) | |
+| `posthog` | `count`, `unique_users` of one event | `POSTHOG_API_KEY` (personal, query read) | `project`, `event`, optional `host` |
+| `csv_url` | one column of a published CSV | none | `url`, `dateColumn`, `valueColumn` |
+| `manual` | typed or uploaded | none | |
+
+For any other tool, add a source (below). For a tool with no API, set up its scheduled export into a Google Sheet, publish that tab as CSV, and use `csv_url`.
 
 ## Changing the report time on Vercel
 

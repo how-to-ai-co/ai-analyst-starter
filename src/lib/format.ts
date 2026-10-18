@@ -42,3 +42,16 @@ export function timeAgo(iso: string | null): string {
   if (h < 36) return `${h} h ago`;
   return `${Math.round(h / 24)} days ago`;
 }
+
+/** "On pace: $41,200 of $50,000 this month, heading for $54,100." */
+export function paceText(k: KpiView): string | null {
+  const p = k.pace;
+  if (!p) return null;
+  const f = (v: number) => formatValue(round(v, k.format), k.format, k.currency);
+  const label = p.status === "ahead" ? "Ahead" : p.status === "on_pace" ? "On pace" : "Behind";
+  const when = { week: "this week", month: "this month", quarter: "this quarter", year: "this year" }[p.period];
+  if (p.aggregate === "latest") return `${label}: ${f(p.actual)} against a target of ${f(p.target)}`;
+  return `${label}: ${f(p.actual)} of ${f(p.target)} ${when}${p.projected !== null ? `, heading for ${f(p.projected)}` : ""}`;
+}
+
+const round = (v: number, format: string) => (format === "percent" ? Math.round(v * 10) / 10 : Math.round(v));

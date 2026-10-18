@@ -14,7 +14,10 @@ export type Kpi = {
   format: Format;
   currency?: string; // "USD"
   goodWhen?: "up" | "down"; // churn and costs are good when they go down
-  target?: number;
+  target?: number; // the goal for the period below
+  targetPeriod?: "week" | "month" | "quarter" | "year";
+  /** "sum": each day adds up (revenue, signups). "latest": the newest value is the number (churn %, cash, pipeline). */
+  aggregate?: "sum" | "latest";
   source: Source;
   publicSafe?: boolean;
 };
@@ -63,4 +66,16 @@ export type KpiView = {
   updatedAt: string | null;
   stale: boolean;
   error?: string;
+  pace?: Pace;
+};
+
+export type Pace = {
+  target: number;
+  period: "week" | "month" | "quarter" | "year";
+  aggregate: "sum" | "latest";
+  actual: number; // period-to-date total, or the latest value
+  expected: number | null; // where a "sum" KPI should be by today
+  projected: number | null; // where a "sum" KPI will land at this rate
+  status: "ahead" | "on_pace" | "behind";
+  pct: number; // actual as a % of target
 };

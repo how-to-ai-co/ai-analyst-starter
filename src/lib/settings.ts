@@ -27,7 +27,9 @@ export function parseSettings(input: unknown): { ok: true; settings: Settings } 
       format,
       currency: typeof k.currency === "string" ? k.currency.toUpperCase().slice(0, 3) : format === "currency" ? "USD" : undefined,
       goodWhen: k.goodWhen === "down" ? ("down" as const) : ("up" as const),
-      target: typeof k.target === "number" ? k.target : undefined,
+      target: typeof k.target === "number" ? k.target : toNum(k.target),
+      targetPeriod: ["week", "month", "quarter", "year"].includes(String(k.targetPeriod)) ? (k.targetPeriod as "week" | "month" | "quarter" | "year") : toNum(k.target) !== undefined || typeof k.target === "number" ? ("month" as const) : undefined,
+      aggregate: k.aggregate === "sum" || k.aggregate === "latest" ? (k.aggregate as "sum" | "latest") : guessAggregate(name, format),
       source,
       publicSafe: k.publicSafe === true,
     };
@@ -54,6 +56,18 @@ export function parseSettings(input: unknown): { ok: true; settings: Settings } 
       kpis,
     },
   };
+}
+
+const toNum = (v: unknown) => {
+  if (typeof v !== "string") return undefined;
+  const n = Number(v.replace(/[$£€,%\s]/g, ""));
+  return Number.isFinite(n) && v.trim() !== "" ? n : undefined;
+};
+
+/** Running totals add up day by day; balances and rates are read as their latest value. */
+function guessAggregate(name: string, format: string): "sum" | "latest" {
+  if (format === "percent") return "latest";
+  return /cash|balance|pipeline|subscriber|follower|headcount|backlog|open |active|mrr|arr|average|avg|rate|time|score/i.test(name) ? "latest" : "sum";
 }
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40);

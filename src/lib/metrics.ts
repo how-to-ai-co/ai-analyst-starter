@@ -1,4 +1,5 @@
 import "server-only";
+import { computePace } from "./pace";
 import { samplePoints, exampleSettings } from "./sample";
 import { sourceLabel, sources } from "./sources";
 import type { Kpi, KpiView, Point, Settings, State } from "./types";
@@ -20,7 +21,7 @@ async function buildView(kpi: Kpi, settings: Settings, state: State): Promise<Kp
   const src = sources[kpi.source.type];
   if (src?.fetch) {
     try {
-      series = await src.fetch(kpi, state.connections);
+      series = await src.fetch(kpi, state.connections, settings.timezone);
       updatedAt = new Date().toISOString();
     } catch (e) {
       error = (e as Error).message;
@@ -31,7 +32,7 @@ async function buildView(kpi: Kpi, settings: Settings, state: State): Promise<Kp
   }
 
   const sample = series.length === 0;
-  if (sample) series = samplePoints(kpi);
+  if (sample) series = samplePoints(kpi, 120);
   series = [...series].sort((a, b) => a.date.localeCompare(b.date));
 
   const last = series[series.length - 1];
@@ -46,7 +47,11 @@ async function buildView(kpi: Kpi, settings: Settings, state: State): Promise<Kp
   // Stale when the newest number is more than 3 days old, which matters most for typed-in numbers.
   const stale = !sample && !!last && Date.now() - Date.parse(last.date) > 3 * DAY;
 
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: settings.timezone }).format(new Date());
+  const pace = computePace(kpi, series, today);
+
   return {
+    pace,
     id: kpi.id,
     name: kpi.name,
     format: kpi.format,
@@ -84,7 +89,7 @@ export async function history(state: State, kpiId: string, start?: string, end?:
   if (!kpi) return null;
   let series = state.data[kpi.id] ?? [];
   const src = sources[kpi.source.type];
-  if (src?.fetch) series = await src.fetch(kpi, state.connections).catch(() => series);
+  if (src?.fetch) series = await src.fetch(kpi, state.connections, settings.timezone).catch(() => series);
   const sample = series.length === 0;
   if (sample) series = samplePoints(kpi, 120);
   const view = views.find((v) => v.id === kpi.id)!;

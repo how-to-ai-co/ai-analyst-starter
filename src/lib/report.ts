@@ -1,5 +1,5 @@
 import "server-only";
-import { changeText, formatValue, timeAgo } from "./format";
+import { changeText, formatValue, paceText, timeAgo } from "./format";
 import type { KpiView, Settings } from "./types";
 
 export function siteUrl(origin?: string): string {
@@ -19,12 +19,14 @@ export function buildReport(settings: Settings, views: KpiView[], link: string):
     const notes = [v.sample ? "sample" : null, v.stale ? `last updated ${timeAgo(v.updatedAt)}` : null, v.error ? "could not refresh" : null].filter(Boolean);
     return `${v.name.padEnd(width)}${value.padEnd(12)}${changeText(v, settings.comparison)}${notes.length ? `  (${notes.join(", ")})` : ""}`;
   });
+  const paces = views.filter((v) => v.pace).map((v) => `${v.name}: ${paceText(v)}`);
   const anySample = views.some((v) => v.sample);
   const text = [
     `${settings.name} for ${today}`,
     "",
     ...lines,
     "",
+    ...(paces.length ? ["Targets", ...paces, ""] : []),
     anySample ? "Numbers marked sample are placeholders until you connect or add your own." : null,
     `Dashboard: ${link}`,
   ].filter((l) => l !== null).join("\n");

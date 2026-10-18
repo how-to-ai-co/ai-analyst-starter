@@ -10,6 +10,7 @@ import { timeAgo } from "@/lib/format";
 import { buildViews } from "@/lib/metrics";
 import { utcCronFor } from "@/lib/report";
 import { exampleSettings } from "@/lib/sample";
+import { neededKeys } from "@/lib/sources";
 import { loadState, storageKind } from "@/lib/store";
 import type { Channel, Connections } from "@/lib/types";
 
@@ -47,7 +48,7 @@ async function Body() {
   const steps = [
     { done: kind !== "none", label: "Storage connected" },
     { done: !usingExample, label: "Your settings saved" },
-    { done: live > 0, label: `Your numbers added (${live} of ${views.length} live)` },
+    { done: live === views.length, label: `Your tools connected (${live} of ${views.length} KPIs live)` },
     { done: ch.ready, label: `Report channel ready (${CHANNEL_HELP[settings.channel].name})` },
     { done: !!state.lastReport?.ok, label: "Test report received" },
     { done: !!askReady(state), label: "Questions on your dashboard (or use the connector link below)" },
@@ -78,8 +79,17 @@ async function Body() {
         <SaveSettings current={JSON.stringify(state.settings ?? exampleSettings, null, 2)} />
       </Section>
 
-      <Section id="numbers" title="Your numbers">
-        <p className="text-sm text-neutral-700">{live} of {views.length} KPIs have your numbers. The rest show sample values. <Link className="link" href="/numbers">Add or upload numbers</Link>.</p>
+      <Section id="tools" title="Connect your tools">
+        <p className="mb-4 text-sm text-neutral-700">
+          Your analyst reads each KPI straight from its tool every time it builds your dashboard or report. Paste one read-only key per tool below. {live} of {views.length} KPIs are live; the rest show sample values.
+        </p>
+        <div className="flex flex-col gap-4">
+          {neededKeys(settings.kpis).map((n) => <SaveConnection key={n.name} name={n.name} label={n.label} help={n.help} saved={masked(n.name)} />)}
+        </div>
+        {views.filter((v) => v.error).map((v) => <p key={v.id} className="mt-3 text-sm text-red-700">{v.name}: {v.error}</p>)}
+        <p className="mt-4 text-xs text-neutral-600">
+          Tool not listed? Your AI can connect it (see AI-GUIDE.md in your repo), or link a spreadsheet the tool exports to. As a last resort, <Link className="link" href="/numbers">type or upload numbers</Link>.
+        </p>
       </Section>
 
       <Section id="report" title={`Your report (${CHANNEL_HELP[settings.channel].name})`}>

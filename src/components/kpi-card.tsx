@@ -1,4 +1,4 @@
-import { changeText, formatValue, timeAgo } from "@/lib/format";
+import { changeText, formatValue, paceText, timeAgo } from "@/lib/format";
 import type { KpiView } from "@/lib/types";
 
 export function KpiCard({ k, comparison }: { k: KpiView; comparison: string }) {
@@ -18,6 +18,14 @@ export function KpiCard({ k, comparison }: { k: KpiView; comparison: string }) {
       </div>
       <p className="text-3xl font-bold tracking-tight">{formatValue(k.value, k.format, k.currency)}</p>
       <p className={`text-sm ${color}`}>{k.trend ? `${arrow} ` : ""}{changeText(k, comparison)}</p>
+      {k.pace && (
+        <div className="flex flex-col gap-1">
+          <p className={`text-sm font-medium ${k.pace.status === "behind" ? "text-red-700" : "text-emerald-700"}`}>{paceText(k)}</p>
+          <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100" aria-hidden>
+            <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.max(2, Math.min(100, k.pace.pct))}%` }} />
+          </div>
+        </div>
+      )}
       <Sparkline points={k.series.map((p) => p.value)} />
       <p className="text-xs text-neutral-500">
         {k.sourceLabel}

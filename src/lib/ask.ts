@@ -1,7 +1,7 @@
 import "server-only";
 import { secret } from "./deliver";
 import { buildViews, history } from "./metrics";
-import { changeText, formatValue } from "./format";
+import { changeText, formatValue, paceText } from "./format";
 import type { State } from "./types";
 
 /**
@@ -43,6 +43,7 @@ export async function runTool(state: State, name: string, input: Record<string, 
         latest: formatValue(v.value, v.format, v.currency),
         latestDate: v.series[v.series.length - 1]?.date ?? null,
         change: changeText(v, settings.comparison),
+        target: paceText(v),
         sample: v.sample,
         stale: v.stale,
         source: v.sourceLabel,
