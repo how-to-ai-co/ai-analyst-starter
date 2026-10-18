@@ -1,5 +1,6 @@
 import { json, owner } from "@/lib/http";
-import { updateState } from "@/lib/store";
+import { notifyOwner } from "@/lib/notify";
+import { loadState, updateState } from "@/lib/store";
 
 const NAME = /^[A-Z][A-Z0-9_]{2,40}$/;
 
@@ -12,7 +13,11 @@ export async function POST(req: Request) {
     if (!v) return json({ error: "Paste the value first." }, 400);
     if (v.length > 2000) return json({ error: "That value is too long." }, 400);
     if (/WEBHOOK_URL$/.test(name) && !/^https:\/\//.test(v)) return json({ error: "Webhook links start with https://" }, 400);
+    const before = await loadState();
     await updateState((s) => { s.connections[name] = v; });
+    if (/WEBHOOK_URL$|^TELEGRAM_BOT_TOKEN$|^REPORT_FROM$/.test(name) && before.connections[name]) {
+      await notifyOwner(before, `${name} was replaced at ${new Date().toUTCString()}. Your reports now go to the new destination.`);
+    }
     return json({ ok: true });
   });
 }

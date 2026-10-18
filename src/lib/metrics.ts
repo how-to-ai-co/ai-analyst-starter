@@ -2,14 +2,21 @@ import "server-only";
 import { computePace } from "./pace";
 import { samplePoints, exampleSettings } from "./sample";
 import { sourceLabel, sources } from "./sources";
+import { updateState } from "./store";
 import type { Kpi, KpiView, Point, Settings, State } from "./types";
 
 const DAY = 86400000;
+const CACHE_MS = 15 * 60 * 1000;
 
 /** The numbers behind the dashboard, the report and every answer the bot gives. */
 export async function buildViews(state: State): Promise<{ settings: Settings; views: KpiView[]; usingExample: boolean }> {
   const settings = state.settings ?? exampleSettings;
   const views = await Promise.all(settings.kpis.map((k) => buildView(k, settings, state)));
+  if (state.cacheDirty) {
+    delete state.cacheDirty;
+    const fresh = state.cache;
+    await updateState((s) => { s.cache = fresh; }).catch(() => undefined); // a failed cache save never breaks the page
+  }
   return { settings, views, usingExample: !state.settings };
 }
 
@@ -20,9 +27,18 @@ async function buildView(kpi: Kpi, settings: Settings, state: State): Promise<Kp
 
   const src = sources[kpi.source.type];
   if (src?.fetch) {
+    const key = JSON.stringify(kpi.source) + settings.timezone;
+    const cached = state.cache?.[kpi.id];
     try {
-      series = await src.fetch(kpi, state.connections, settings.timezone);
-      updatedAt = new Date().toISOString();
+      if (cached && cached.key === key && Date.now() - Date.parse(cached.at) < CACHE_MS) {
+        series = cached.series;
+        updatedAt = cached.at;
+      } else {
+        series = await src.fetch(kpi, state.connections, settings.timezone);
+        updatedAt = new Date().toISOString();
+        (state.cache ??= {})[kpi.id] = { at: updatedAt, key, series };
+        state.cacheDirty = true;
+      }
     } catch (e) {
       error = (e as Error).message;
       series = state.data[kpi.id] ?? [];

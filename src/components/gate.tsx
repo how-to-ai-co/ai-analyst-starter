@@ -8,7 +8,7 @@ export async function Gate({ children }: { children: React.ReactNode }) {
       <Center>
         <h1 className="text-2xl font-bold">Almost there</h1>
         <p className="mt-3 text-neutral-700">
-          Your analyst needs a passcode before it can show your numbers. In your host&rsquo;s project settings, add an environment variable named <code className="rounded bg-neutral-100 px-1">DASHBOARD_PASSCODE</code> with a passcode of 6 characters or more, then redeploy.
+          Your analyst needs a passcode before it can show your numbers. In your host&rsquo;s project settings, add an environment variable named <code className="rounded bg-neutral-100 px-1">DASHBOARD_PASSCODE</code> with a passcode of 10 characters or more, then redeploy. If you set a shorter one, make it longer.
         </p>
       </Center>
     );

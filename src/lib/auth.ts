@@ -11,7 +11,7 @@ const COOKIE = "analyst_session";
 
 export function passcode(): string | null {
   const p = process.env.DASHBOARD_PASSCODE?.trim();
-  return p && p.length >= 6 ? p : null;
+  return p && p.length >= 10 ? p : null;
 }
 
 export function sign(purpose: string): string {
@@ -36,6 +36,8 @@ export async function signOut() {
   (await cookies()).delete(COOKIE);
 }
 
+/** Secret in the drop-off address that Make, Zapier or Claude post KPI values to. */
+export const ingestToken = () => sign("ingest").slice(0, 40);
 /** Secret for the Claude or ChatGPT connector URL, derived from the passcode. */
 export const mcpToken = () => sign("mcp").slice(0, 40);
 /** Secret Telegram sends back with every message, derived from the passcode. */

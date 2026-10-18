@@ -4,7 +4,7 @@ import { Gate } from "@/components/gate";
 import { ActionButton, CopyField, SaveConnection, SaveSettings, SignOut } from "@/components/setup-actions";
 import { Shell } from "@/components/shell";
 import { askReady } from "@/lib/ask";
-import { mcpToken } from "@/lib/auth";
+import { ingestToken, mcpToken } from "@/lib/auth";
 import { channelReady, secret } from "@/lib/deliver";
 import { timeAgo } from "@/lib/format";
 import { buildViews } from "@/lib/metrics";
@@ -87,9 +87,17 @@ async function Body() {
           {neededKeys(settings.kpis).map((n) => <SaveConnection key={n.name} name={n.name} label={n.label} help={n.help} saved={masked(n.name)} />)}
         </div>
         {views.filter((v) => v.error).map((v) => <p key={v.id} className="mt-3 text-sm text-red-700">{v.name}: {v.error}</p>)}
-        <p className="mt-4 text-xs text-neutral-600">
-          Tool not listed? Your AI can connect it (see AI-GUIDE.md in your repo), or link a spreadsheet the tool exports to. As a last resort, <Link className="link" href="/numbers">type or upload numbers</Link>.
-        </p>
+        <div className="mt-5 rounded-xl bg-neutral-50 p-4">
+          <h3 className="text-sm font-semibold">Tool not listed? Use your drop-off address</h3>
+          <p className="mb-3 mt-1 text-xs text-neutral-600">
+            Anything that can post to a web address can keep a KPI updated: a Make scenario (HTTP module, &ldquo;Make a request&rdquo;), a Zap with Webhooks by Zapier, n8n, or your AI on a schedule. Set that KPI&rsquo;s source to <code>{`{"type":"pushed"}`}</code> in your settings, then have it POST this every day:
+          </p>
+          <CopyField label="Your drop-off address (keep it private)" value={`${origin}/api/ingest/${ingestToken()}`} />
+          <pre className="mt-3 overflow-x-auto rounded-lg bg-white p-3 font-mono text-xs">{`{ "kpi": "${settings.kpis[0]?.name ?? "Revenue"}", "date": "2026-10-16", "value": 12480 }`}</pre>
+          <p className="mt-3 text-xs text-neutral-600">
+            Your AI can also connect a new tool directly (AI-GUIDE.md in your repo). Typing values on <Link className="link" href="/numbers">Add numbers</Link> is the last resort.
+          </p>
+        </div>
       </Section>
 
       <Section id="report" title={`Your report (${CHANNEL_HELP[settings.channel].name})`}>

@@ -47,6 +47,11 @@ export type State = {
   updated: Record<string, string>; // kpi id -> ISO time of last new data
   connections: Connections;
   lastReport?: { at: string; ok: boolean; detail: string };
+  /** Values read from each tool, kept for 15 minutes so pages load fast. */
+  cache?: Record<string, { at: string; key: string; series: Point[] }>;
+  /** Wrong passcode attempts, so guessing gets locked out. */
+  security?: { fails: number; lockedUntil?: string };
+  cacheDirty?: boolean; // in memory only, never saved
 };
 
 export type KpiView = {

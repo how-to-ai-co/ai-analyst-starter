@@ -17,6 +17,7 @@ export type Need = { name: string; label: string; help: string };
 
 export const sources: Record<string, { label: string; fetch?: SourceFn; needs?: Need[] }> = {
   manual: { label: "Typed or uploaded" },
+  pushed: { label: "Sent by Make, Zapier or Claude" }, // values arrive at /api/ingest/<token>
   csv_url: { label: "Spreadsheet link", fetch: csvUrl },
   stripe: {
     label: "Stripe",

@@ -1,6 +1,6 @@
 # Guide for the AI assistant helping a member
 
-The member is probably not a coder. Keep messages to one or two sentences, do the work yourself when you can, and never ask them to paste a key or password into the chat. Keys go on the app's Setup page or in the host's environment variables.
+The member is probably not a coder. Keep messages to one or two sentences, do the work yourself when you can, and never ask them to paste a key or password into the chat. The passcode must be 10 characters or more; five wrong tries lock sign-in for 15 minutes. Keys go on the app's Setup page or in the host's environment variables.
 
 ## The settings block
 
@@ -47,9 +47,14 @@ Connected sources refresh on their own every time the dashboard, report or bot r
 | `hubspot` | `won_amount`, `deals_won`, `new_deals`, `open_pipeline` | `HUBSPOT_TOKEN` (private app, crm.objects.deals.read) | |
 | `posthog` | `count`, `unique_users` of one event | `POSTHOG_API_KEY` (personal, query read) | `project`, `event`, optional `host` |
 | `csv_url` | one column of a published CSV | none | `url`, `dateColumn`, `valueColumn` |
-| `manual` | typed or uploaded | none | |
+| `pushed` | values posted to the drop-off address | none | |
+| `manual` | typed or uploaded (last resort) | none | |
 
-For any other tool, add a source (below). For a tool with no API, set up its scheduled export into a Google Sheet, publish that tab as CSV, and use `csv_url`.
+For any other tool, pick one:
+
+1. **Drop-off address (no code).** Set the KPI's source to `{ "type": "pushed" }`. The Setup page shows a private address. Have a Make scenario (HTTP module, Make a request), a Zap (Webhooks by Zapier), n8n, or a scheduled AI task POST `{ "kpi": "Website visitors", "date": "2026-10-16", "value": 4212 }` to it every day, reading the value from the tool with the member's own login. Batches: `{ "values": [ ... ] }`.
+2. **A new source file** (Claude Code or Codex), below.
+3. **A published spreadsheet** the tool exports into on a schedule, with `csv_url`.
 
 ## Changing the report time on Vercel
 
