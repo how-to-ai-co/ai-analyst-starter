@@ -1,15 +1,17 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { call } from "./api";
 
 type Row = { id: string; name: string; format: string; points: number; lastDate: string | null; sourceType: string; url?: string };
 
 export function NumbersForms({ kpis, canLink }: { kpis: Row[]; canLink: boolean }) {
+  const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [csv, setCsv] = useState("");
   const [uploadKpi, setUploadKpi] = useState("");
-  const done = (ok: boolean, text: string) => { setMsg({ ok, text }); if (ok) setTimeout(() => location.reload(), 700); };
+  const done = (ok: boolean, text: string) => { setMsg({ ok, text }); if (ok) router.refresh(); };
 
   return (
     <div className="flex flex-col gap-6">
