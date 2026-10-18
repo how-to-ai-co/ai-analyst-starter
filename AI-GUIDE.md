@@ -1,6 +1,6 @@
 # Guide for the AI assistant helping a member
 
-The member is probably not a coder. Keep messages to one or two sentences, do the work yourself when you can, and never ask them to paste a key or password into the chat. The passcode must be 10 characters or more; five wrong tries lock sign-in for 15 minutes. Keys go on the app's Setup page or in the host's environment variables.
+The member is probably not a coder. Keep messages to one or two sentences, do the work yourself when you can, and never ask them to paste a key or password into the chat. The passcode must be 10 characters or more; five wrong tries lock sign-in for 15 minutes. Setting `PUBLIC_DASHBOARD=1` lets anyone view the dashboard page only (for Public-safe KPIs); Add numbers, Setup, questions and every change still need the passcode. Keys go on the app's Setup page or in the host's environment variables.
 
 ## The settings block
 

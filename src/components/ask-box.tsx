@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { call } from "./api";
 
-export function AskBox({ ready, examples }: { ready: boolean; examples: string[] }) {
+export function AskBox({ ready, examples, viewer = false }: { ready: boolean; examples: string[]; viewer?: boolean }) {
   const [q, setQ] = useState("");
   const [answer, setAnswer] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  if (viewer) return <p className="text-sm text-neutral-600">Sign in with the passcode to ask questions.</p>;
   if (!ready) {
     return (
       <p className="text-sm text-neutral-600">

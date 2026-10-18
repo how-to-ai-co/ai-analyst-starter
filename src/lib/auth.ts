@@ -36,6 +36,12 @@ export async function signOut() {
   (await cookies()).delete(COOKIE);
 }
 
+/**
+ * PUBLIC_DASHBOARD=1 lets anyone view the dashboard without the passcode (for public-safe
+ * KPIs or a demo). Add numbers, Setup and every change still need the passcode.
+ */
+export const publicDashboard = () => process.env.PUBLIC_DASHBOARD === "1";
+
 /** Secret in the drop-off address that Make, Zapier or Claude post KPI values to. */
 export const ingestToken = () => sign("ingest").slice(0, 40);
 /** Secret for the Claude or ChatGPT connector URL, derived from the passcode. */

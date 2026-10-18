@@ -4,6 +4,7 @@ import { Gate } from "@/components/gate";
 import { KpiCard } from "@/components/kpi-card";
 import { Shell } from "@/components/shell";
 import { askReady } from "@/lib/ask";
+import { isSignedIn, publicDashboard } from "@/lib/auth";
 import { buildViews } from "@/lib/metrics";
 import { loadState } from "@/lib/store";
 
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
   return (
-    <Gate>
+    <Gate allowPublic>
       <DashboardBody />
     </Gate>
   );
@@ -22,8 +23,11 @@ async function DashboardBody() {
   const { settings, views, usingExample } = await buildViews(state);
   const samples = views.filter((v) => v.sample).length;
   const first = views[0]?.name ?? "revenue";
+  const signedIn = await isSignedIn();
+  const viewer = publicDashboard() && !signedIn;
   return (
     <Shell title={settings.name} accent={settings.accent} active="dashboard">
+      {viewer && <Notice>You&rsquo;re viewing this dashboard without signing in. Questions, Add numbers and Setup need the passcode.</Notice>}
       {usingExample ? (
         <Notice>
           These are example KPIs. Paste the settings your AI gave you on <Link className="link" href="/setup#settings">Setup</Link> and this becomes your dashboard.
@@ -40,7 +44,7 @@ async function DashboardBody() {
       </section>
       <section className="card mt-6">
         <h2 className="mb-3 font-semibold">Ask your analyst</h2>
-        <AskBox ready={!!askReady(state)} examples={[`How did ${first.toLowerCase()} change this week?`, "What moved the most?", "Which number needs attention?"]} />
+        <AskBox ready={!viewer && !!askReady(state)} viewer={viewer} examples={[`How did ${first.toLowerCase()} change this week?`, "What moved the most?", "Which number needs attention?"]} />
       </section>
     </Shell>
   );

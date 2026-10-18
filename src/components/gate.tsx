@@ -1,8 +1,9 @@
-import { isSignedIn, passcode } from "@/lib/auth";
+import { isSignedIn, passcode, publicDashboard } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 
 /** Shows the passcode screen (or the "set a passcode" screen) instead of the page when needed. */
-export async function Gate({ children }: { children: React.ReactNode }) {
+export async function Gate({ children, allowPublic = false }: { children: React.ReactNode; allowPublic?: boolean }) {
+  if (allowPublic && publicDashboard()) return <>{children}</>;
   if (!passcode()) {
     return (
       <Center>
