@@ -1,0 +1,158 @@
+import { headers } from "next/headers";
+import Link from "next/link";
+import { Gate } from "@/components/gate";
+import { ActionButton, CopyField, SaveConnection, SaveSettings, SignOut } from "@/components/setup-actions";
+import { Shell } from "@/components/shell";
+import { askReady } from "@/lib/ask";
+import { mcpToken } from "@/lib/auth";
+import { channelReady, secret } from "@/lib/deliver";
+import { timeAgo } from "@/lib/format";
+import { buildViews } from "@/lib/metrics";
+import { utcCronFor } from "@/lib/report";
+import { exampleSettings } from "@/lib/sample";
+import { loadState, storageKind } from "@/lib/store";
+import type { Channel, Connections } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+
+const CHANNEL_HELP: Record<Channel, { name: string; fields: { name: string; label: string; help: string }[] }> = {
+  email: { name: "Email", fields: [{ name: "RESEND_API_KEY", label: "Resend API key", help: "Sign up free at resend.com with the email address your report goes to, then API Keys, Create. Reports go to that same address." }] },
+  slack: { name: "Slack", fields: [{ name: "SLACK_WEBHOOK_URL", label: "Slack webhook link", help: "At api.slack.com/apps: Create New App, From scratch, Incoming Webhooks, turn on, Add New Webhook, pick a channel only you are in, copy the link." }] },
+  teams: { name: "Microsoft Teams", fields: [{ name: "TEAMS_WEBHOOK_URL", label: "Teams workflow link", help: "In Teams, open Workflows and choose \"Post to a chat when a webhook request is received\" (or the channel version), finish the steps and copy the link. If Workflows is missing, your IT team has switched it off; use email for now." }] },
+  google_chat: { name: "Google Chat", fields: [{ name: "GOOGLE_CHAT_WEBHOOK_URL", label: "Google Chat webhook link", help: "In a space only you are in: the space name, Apps & integrations, Webhooks, Add, copy the link." }] },
+  telegram: { name: "Telegram", fields: [{ name: "TELEGRAM_BOT_TOKEN", label: "Telegram bot token", help: "In Telegram, message @BotFather, send /newbot, pick a name, and paste the token it gives you." }] },
+};
+
+export default async function SetupPage() {
+  return (
+    <Gate>
+      <Body />
+    </Gate>
+  );
+}
+
+async function Body() {
+  const state = await loadState();
+  const { settings, views, usingExample } = await buildViews(state);
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const kind = storageKind();
+  const conn = state.connections;
+  const live = views.filter((v) => !v.sample).length;
+  const ch = channelReady(settings, conn);
+  const host = process.env.VERCEL ? "vercel" : process.env.NETLIFY ? "netlify" : "local";
+  const repo = process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG ? `https://github.com/${process.env.VERCEL_GIT_REPO_OWNER}/${process.env.VERCEL_GIT_REPO_SLUG}/edit/${process.env.VERCEL_GIT_COMMIT_REF || "main"}/vercel.json` : null;
+  const cron = utcCronFor(settings);
+  const masked = (n: string) => maskedValue(n, conn);
+  const steps = [
+    { done: kind !== "none", label: "Storage connected" },
+    { done: !usingExample, label: "Your settings saved" },
+    { done: live > 0, label: `Your numbers added (${live} of ${views.length} live)` },
+    { done: ch.ready, label: `Report channel ready (${CHANNEL_HELP[settings.channel].name})` },
+    { done: !!state.lastReport?.ok, label: "Test report received" },
+    { done: !!askReady(state), label: "Questions on your dashboard (or use the connector link below)" },
+  ];
+
+  return (
+    <Shell title={settings.name} accent={settings.accent} active="setup">
+      <section className="card">
+        <h2 className="font-semibold">Your progress</h2>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {steps.map((s) => (
+            <li key={s.label} className="flex items-center gap-2 text-sm">
+              <span className={`flex size-5 items-center justify-center rounded-full text-[11px] font-bold ${s.done ? "bg-emerald-600 text-white" : "border border-neutral-300 text-neutral-400"}`}>{s.done ? "✓" : ""}</span>
+              {s.label}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {kind === "none" && (
+        <Section id="storage" title="1. Connect storage">
+          <p className="text-sm text-neutral-700">Your app needs a place to keep your numbers. In Vercel, open this project, then Storage, then Create Database, choose Blob, keep it Private and connect it to this project. Then redeploy.</p>
+        </Section>
+      )}
+
+      <Section id="settings" title="Your settings">
+        <p className="mb-3 text-sm text-neutral-700">Paste the settings block your AI gave you and press Save. You can edit it here any time.</p>
+        <SaveSettings current={JSON.stringify(state.settings ?? exampleSettings, null, 2)} />
+      </Section>
+
+      <Section id="numbers" title="Your numbers">
+        <p className="text-sm text-neutral-700">{live} of {views.length} KPIs have your numbers. The rest show sample values. <Link className="link" href="/numbers">Add or upload numbers</Link>.</p>
+      </Section>
+
+      <Section id="report" title={`Your report (${CHANNEL_HELP[settings.channel].name})`}>
+        <p className="mb-4 text-sm text-neutral-700">
+          Goes only to you{settings.channel === "email" ? <> at <b>{settings.reportEmail ?? "the email in your settings"}</b></> : null}. Change the channel in your settings.
+        </p>
+        <div className="flex flex-col gap-4">
+          {CHANNEL_HELP[settings.channel].fields.map((f) => <SaveConnection key={f.name} {...f} saved={masked(f.name)} />)}
+          {settings.channel === "telegram" && secret("TELEGRAM_BOT_TOKEN", conn) && (
+            <div className="rounded-xl bg-neutral-50 p-3 text-sm">
+              {secret("TELEGRAM_CHAT_ID", conn) ? <p>Telegram is connected to your chat.</p> : <><p className="mb-2">Press Connect, then open your bot in Telegram and send it any message.</p><ActionButton url="/api/telegram/connect" label="Connect Telegram" busyLabel="Connecting…" okText="Now send your bot a message in Telegram." /></>}
+            </div>
+          )}
+          {ch.ready ? <ActionButton url="/api/report" label="Send test report" busyLabel="Sending…" okText="Sent. Check that it arrived." /> : <p className="text-sm text-amber-800">Still needed: {ch.missing.join(", ")}.</p>}
+          {state.lastReport && <p className={`text-xs ${state.lastReport.ok ? "text-neutral-500" : "text-red-700"}`}>Last report {timeAgo(state.lastReport.at)}: {state.lastReport.detail}</p>}
+        </div>
+      </Section>
+
+      <Section id="schedule" title="When it arrives">
+        <p className="text-sm text-neutral-700">
+          Your settings say {settings.reportDays === "weekdays" ? "weekdays" : settings.reportDays === "mondays" ? "Mondays" : "every day"} at {settings.reportHour}:00 ({settings.timezone}).
+        </p>
+        {host === "vercel" && (
+          <div className="mt-3 text-sm text-neutral-700">
+            <p>On Vercel&rsquo;s free plan the report runs once a day at the time set in <code>vercel.json</code>, and it can arrive up to an hour after that time. To match your settings, the line should be:</p>
+            <pre className="mt-2 rounded-lg bg-neutral-50 p-3 font-mono text-xs">{`"schedule": "${cron}"`}</pre>
+            {repo && <p className="mt-2"><a className="link" href={repo} target="_blank" rel="noreferrer">Open vercel.json on GitHub</a>, replace the schedule line, and commit. Vercel redeploys on its own.</p>}
+          </div>
+        )}
+        {host === "netlify" && <p className="mt-3 text-sm text-neutral-700">On Netlify your analyst checks every hour and sends at your chosen hour. Nothing to change.</p>}
+        {host === "local" && <p className="mt-3 text-sm text-neutral-700">Schedules run once your analyst is deployed.</p>}
+      </Section>
+
+      <Section id="questions" title="Ask your analyst questions">
+        <div className="flex flex-col gap-5">
+          <div>
+            <h3 className="text-sm font-semibold">Inside Claude or ChatGPT (no extra cost on paid plans)</h3>
+            <p className="mb-2 mt-1 text-xs text-neutral-600">Add this link as a custom connector in your Claude or ChatGPT settings (Connectors). Your plan has to allow custom connectors. Keep the link private: anyone with it can read your numbers.</p>
+            <CopyField label="Your connector link" value={`${origin}/api/mcp/${mcpToken()}`} />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold">On your dashboard and in Telegram</h3>
+            <p className="mb-2 mt-1 text-xs text-neutral-600">Needs one API key, billed by use (usually a few cents a day). This is separate from a Claude or ChatGPT subscription.</p>
+            <div className="flex flex-col gap-3">
+              <SaveConnection name="ANTHROPIC_API_KEY" label="Anthropic API key" help="console.anthropic.com, API Keys, Create Key." saved={masked("ANTHROPIC_API_KEY")} />
+              <SaveConnection name="OPENAI_API_KEY" label="or OpenAI API key" help="platform.openai.com, API keys, Create new secret key." saved={masked("OPENAI_API_KEY")} />
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section id="update" title="Keeping your analyst up to date">
+        <p className="text-sm text-neutral-700">
+          Your settings, numbers and keys live in your app&rsquo;s storage, not in the code, so updates never touch them. When How to AI improves the starter, paste the AI 301 recipe into Claude or ChatGPT and say &ldquo;Update my analyst&rdquo;.
+        </p>
+      </Section>
+
+      <div className="mt-6 flex justify-end"><SignOut /></div>
+    </Shell>
+  );
+}
+
+function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} className="card mt-5 scroll-mt-4">
+      <h2 className="mb-3 font-semibold">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function maskedValue(name: string, conn: Connections) {
+  const v = secret(name, conn);
+  return v ? `••••${v.slice(-4)}` : null;
+}
+

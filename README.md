@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Your AI analyst
 
-## Getting Started
+A private dashboard of your key numbers, a report sent to you on a schedule, and an analyst you can ask questions. Made for the How to AI AI 301 workshop.
 
-First, run the development server:
+## Start
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Pick one. Both are free to start.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Use it for | Button |
+| --- | --- |
+| Personal tracking, learning, side projects | [Deploy to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhow-to-ai-co%2Fai-analyst-starter&project-name=my-ai-analyst&repository-name=my-ai-analyst&env=DASHBOARD_PASSCODE&envDescription=Make+up+a+passcode+%286+characters+or+more%29.+You+will+type+it+to+open+your+dashboard.&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D) |
+| Your business or your employer's numbers | [Deploy to Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/how-to-ai-co/ai-analyst-starter) |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Vercel's free plan is for personal, non-commercial use. For business numbers, use Netlify's free plan, or Vercel's paid plan.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+When it asks, make up a passcode. Then open your new site, type the passcode, and follow the **Setup** page. It shows a checklist and tells you each next step.
 
-## Learn More
+## What you do, in order
 
-To learn more about Next.js, take a look at the following resources:
+1. **Settings.** Paste the settings block your AI gave you (from the AI 301 recipe) on the Setup page.
+2. **Numbers.** Type them in, upload a spreadsheet, or link a published spreadsheet on the Add numbers page. Until then, cards show sample numbers.
+3. **Report.** Save one key or link for your channel (email, Slack, Teams, Google Chat or Telegram) and press Send test report.
+4. **Schedule.** On Netlify it is automatic. On Vercel, the Setup page gives you one line to paste into `vercel.json`.
+5. **Questions.** Copy your connector link into Claude or ChatGPT, or save an Anthropic or OpenAI key to ask on the dashboard and in Telegram.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## What to expect
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Everything is private to you behind your passcode. Sharing is your choice.
+- Keys you save on the Setup page are stored in your own app's private storage and never shown again.
+- On Teams, your report arrives in Teams. Asking questions happens in Claude, ChatGPT or the dashboard, because a Teams bot that answers back needs your IT team.
+- On Vercel's free plan the report can arrive up to an hour after the scheduled time.
+- Numbers you type in by hand show "Needs update" when they are more than three days old.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For AI assistants helping with this app, read [AI-GUIDE.md](AI-GUIDE.md).

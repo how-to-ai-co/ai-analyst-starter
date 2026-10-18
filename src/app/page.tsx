@@ -1,103 +1,51 @@
-import Image from "next/image";
+import Link from "next/link";
+import { AskBox } from "@/components/ask-box";
+import { Gate } from "@/components/gate";
+import { KpiCard } from "@/components/kpi-card";
+import { Shell } from "@/components/shell";
+import { askReady } from "@/lib/ask";
+import { buildViews } from "@/lib/metrics";
+import { loadState } from "@/lib/store";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Dashboard() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    <Gate>
+      <DashboardBody />
+    </Gate>
   );
+}
+
+async function DashboardBody() {
+  const state = await loadState();
+  const { settings, views, usingExample } = await buildViews(state);
+  const samples = views.filter((v) => v.sample).length;
+  const first = views[0]?.name ?? "revenue";
+  return (
+    <Shell title={settings.name} accent={settings.accent} active="dashboard">
+      {usingExample ? (
+        <Notice>
+          These are example KPIs. Paste the settings your AI gave you on <Link className="link" href="/setup#settings">Setup</Link> and this becomes your dashboard.
+        </Notice>
+      ) : samples > 0 ? (
+        <Notice>
+          {samples === views.length ? "All" : samples} of your numbers {samples === 1 ? "is" : "are"} still sample values. <Link className="link" href="/numbers">Add your numbers</Link> to make them real.
+        </Notice>
+      ) : null}
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {views.map((k) => (
+          <KpiCard key={k.id} k={k} comparison={settings.comparison} />
+        ))}
+      </section>
+      <section className="card mt-6">
+        <h2 className="mb-3 font-semibold">Ask your analyst</h2>
+        <AskBox ready={!!askReady(state)} examples={[`How did ${first.toLowerCase()} change this week?`, "What moved the most?", "Which number needs attention?"]} />
+      </section>
+    </Shell>
+  );
+}
+
+function Notice({ children }: { children: React.ReactNode }) {
+  return <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{children}</p>;
 }

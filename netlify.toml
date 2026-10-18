@@ -1,0 +1,3 @@
+# Netlify detects Next.js on its own. This only asks for the passcode during "Deploy to Netlify".
+[template.environment]
+  DASHBOARD_PASSCODE = "Make up a passcode (6 characters or more). You will type it to open your dashboard."
