@@ -8,7 +8,7 @@ Pick one. Both are free to start.
 
 | Use it for | Button |
 | --- | --- |
-| Personal tracking, learning, side projects | [Deploy to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhow-to-ai-co%2Fai-analyst-starter&project-name=my-ai-analyst&repository-name=my-ai-analyst&env=DASHBOARD_PASSCODE&envDescription=Make+up+a+passcode+%286+characters+or+more%29.+You+will+type+it+to+open+your+dashboard.&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D) |
+| Personal tracking, learning, side projects | [Deploy to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fhow-to-ai-co%2Fai-analyst-starter&project-name=my-ai-analyst&repository-name=my-ai-analyst&env=DASHBOARD_PASSCODE&envDescription=Make+up+a+passcode+%2810+characters+or+more%29.+You+will+type+it+to+open+your+dashboard.&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D) |
 | Your business or your employer's numbers | [Deploy to Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/how-to-ai-co/ai-analyst-starter) |
 
 Vercel's free plan is for personal, non-commercial use. For business numbers, use Netlify's free plan, or Vercel's paid plan.
