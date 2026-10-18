@@ -50,7 +50,10 @@ export function paceText(k: KpiView): string | null {
   const f = (v: number) => formatValue(round(v, k.format), k.format, k.currency);
   const label = p.status === "ahead" ? "Ahead" : p.status === "on_pace" ? "On pace" : "Behind";
   const when = { week: "this week", month: "this month", quarter: "this quarter", year: "this year" }[p.period];
-  if (p.aggregate === "latest") return `${label}: ${f(p.actual)} against a target of ${f(p.target)}`;
+  if (p.aggregate === "latest") {
+    const word = p.status === "ahead" ? "Better than target" : p.status === "on_pace" ? "At target" : "Worse than target";
+    return `${word}: ${f(p.actual)}, target ${f(p.target)}`;
+  }
   return `${label}: ${f(p.actual)} of ${f(p.target)} ${when}${p.projected !== null ? `, heading for ${f(p.projected)}` : ""}`;
 }
 
