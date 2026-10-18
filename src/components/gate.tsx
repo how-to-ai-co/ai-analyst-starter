@@ -1,9 +1,15 @@
-import { isSignedIn, passcode, publicDashboard } from "@/lib/auth";
+import { isSignedIn, isViewer, passcode, publicDashboard } from "@/lib/auth";
+import { secret } from "@/lib/deliver";
+import { loadState } from "@/lib/store";
 import { LoginForm } from "./login-form";
 
 /** Shows the passcode screen (or the "set a passcode" screen) instead of the page when needed. */
 export async function Gate({ children, allowPublic = false }: { children: React.ReactNode; allowPublic?: boolean }) {
   if (allowPublic && publicDashboard()) return <>{children}</>;
+  if (allowPublic && passcode() && !(await isSignedIn())) {
+    const v = secret("VIEWER_PASSCODE", (await loadState()).connections);
+    if (await isViewer(v)) return <>{children}</>;
+  }
   if (!passcode()) {
     return (
       <Center>
@@ -18,7 +24,7 @@ export async function Gate({ children, allowPublic = false }: { children: React.
     return (
       <Center>
         <h1 className="text-2xl font-bold">Your AI analyst</h1>
-        <p className="mt-2 text-neutral-600">Private dashboard. Enter your passcode to see your numbers.</p>
+        <p className="mt-2 text-neutral-600">{allowPublic ? "Private dashboard. Enter your passcode to see the numbers." : "This page needs the owner's passcode. A view-only passcode opens the dashboard only."}</p>
         <LoginForm />
       </Center>
     );

@@ -1,5 +1,6 @@
 import { passcode, signIn } from "@/lib/auth";
 import { json } from "@/lib/http";
+import { secret } from "@/lib/deliver";
 import { loadState, updateState } from "@/lib/store";
 
 const MAX_FAILS = 5;
@@ -13,9 +14,10 @@ export async function POST(req: Request) {
 
   const { passcode: attempt } = await req.json().catch(() => ({ passcode: "" }));
   await new Promise((r) => setTimeout(r, 400));
-  if (await signIn(String(attempt ?? ""))) {
+  const role = await signIn(String(attempt ?? ""), secret("VIEWER_PASSCODE", state.connections));
+  if (role) {
     if (state.security?.fails) await updateState((s) => { s.security = { fails: 0 }; });
-    return json({ ok: true });
+    return json({ ok: true, role });
   }
   const fails = (state.security?.fails ?? 0) + 1;
   await updateState((s) => {

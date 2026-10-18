@@ -162,6 +162,11 @@ async function Body() {
         </div>
       </Section>
 
+      <Section id="share" title="Share your dashboard">
+        <p className="mb-3 text-sm text-neutral-700">Make up a view-only passcode and send it with your dashboard link to your team or your boss. They see the dashboard and nothing else. Change it here any time to cut off access.</p>
+        <SaveConnection name="VIEWER_PASSCODE" label="View-only passcode (10+ characters)" saved={masked("VIEWER_PASSCODE")} placeholder="Make one up" />
+      </Section>
+
       <Section id="update" title="Keeping your analyst up to date">
         <p className="text-sm text-neutral-700">
           Your settings, numbers and keys live in your app&rsquo;s storage, not in the code, so updates never touch them. When How to AI improves the starter, paste the AI 301 recipe into Claude or ChatGPT and say &ldquo;Update my analyst&rdquo;.

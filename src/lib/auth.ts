@@ -25,15 +25,39 @@ export async function isSignedIn(): Promise<boolean> {
   return !!c && safeEqual(c, sign("session"));
 }
 
-export async function signIn(attempt: string): Promise<boolean> {
+const VIEWER = "analyst_viewer";
+const COOKIE_OPTS = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/", maxAge: 60 * 60 * 24 * 90 };
+
+/**
+ * Signs in as the owner (the DASHBOARD_PASSCODE) or as a viewer (the view-only passcode saved on Setup).
+ * Viewers see the dashboard and nothing else: no Setup, no Add numbers, no questions, no changes.
+ */
+export async function signIn(attempt: string, viewerPasscode?: string): Promise<"owner" | "viewer" | null> {
   const p = passcode();
-  if (!p || !safeEqual(attempt.trim(), p)) return false;
-  (await cookies()).set(COOKIE, sign("session"), { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 90 });
-  return true;
+  const a = attempt.trim();
+  if (!p) return null;
+  if (safeEqual(a, p)) {
+    (await cookies()).set(COOKIE, sign("session"), COOKIE_OPTS);
+    return "owner";
+  }
+  if (viewerPasscode && viewerPasscode.length >= 10 && safeEqual(a, viewerPasscode)) {
+    (await cookies()).set(VIEWER, sign(`viewer:${viewerPasscode}`), COOKIE_OPTS);
+    return "viewer";
+  }
+  return null;
+}
+
+/** True for a viewer whose view-only passcode is still the current one. */
+export async function isViewer(viewerPasscode?: string): Promise<boolean> {
+  if (!passcode() || !viewerPasscode) return false;
+  const c = (await cookies()).get(VIEWER)?.value;
+  return !!c && safeEqual(c, sign(`viewer:${viewerPasscode}`));
 }
 
 export async function signOut() {
-  (await cookies()).delete(COOKIE);
+  const jar = await cookies();
+  jar.delete(COOKIE);
+  jar.delete(VIEWER);
 }
 
 /**

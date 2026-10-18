@@ -4,7 +4,7 @@ import { Gate } from "@/components/gate";
 import { KpiCard } from "@/components/kpi-card";
 import { Shell } from "@/components/shell";
 import { askReady } from "@/lib/ask";
-import { isSignedIn, publicDashboard } from "@/lib/auth";
+import { isSignedIn } from "@/lib/auth";
 import { buildViews } from "@/lib/metrics";
 import { loadState } from "@/lib/store";
 
@@ -24,10 +24,10 @@ async function DashboardBody() {
   const samples = views.filter((v) => v.sample).length;
   const first = views[0]?.name ?? "revenue";
   const signedIn = await isSignedIn();
-  const viewer = publicDashboard() && !signedIn;
+  const viewer = !signedIn; // a view-only passcode or a public dashboard
   return (
     <Shell title={settings.name} accent={settings.accent} active="dashboard">
-      {viewer && <Notice>You&rsquo;re viewing this dashboard without signing in. Questions, Add numbers and Setup need the passcode.</Notice>}
+      {viewer && <Notice>You&rsquo;re viewing this dashboard read-only. Questions, Add numbers and Setup need the owner&rsquo;s passcode.</Notice>}
       {usingExample ? (
         <Notice>
           These are example KPIs. Paste the settings your AI gave you on <Link className="link" href="/setup#settings">Setup</Link> and this becomes your dashboard.
