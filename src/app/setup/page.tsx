@@ -18,7 +18,14 @@ export const dynamic = "force-dynamic";
 
 const CHANNEL_HELP: Record<Channel, { name: string; fields: { name: string; label: string; help: string }[] }> = {
   email: { name: "Email", fields: [{ name: "RESEND_API_KEY", label: "Resend API key", help: "Sign up free at resend.com with the email address your report goes to, then API Keys, Create. Reports go to that same address." }] },
-  slack: { name: "Slack", fields: [{ name: "SLACK_WEBHOOK_URL", label: "Slack webhook link", help: "At api.slack.com/apps: Create New App, From scratch, Incoming Webhooks, turn on, Add New Webhook, pick a channel only you are in, copy the link." }] },
+  slack: {
+    name: "Slack",
+    fields: [
+      { name: "SLACK_BOT_TOKEN", label: "Slack bot token (starts xoxb-)", help: "After creating the app from the manifest below: Install to Workspace, then OAuth & Permissions, copy the Bot User OAuth Token." },
+      { name: "SLACK_SIGNING_SECRET", label: "Slack signing secret", help: "In the same app: Basic Information, App Credentials, Signing Secret, Show, copy." },
+      { name: "SLACK_CHANNEL_ID", label: "Channel ID for the morning report", help: "In Slack, open the channel (one only you are in, to start), click its name, and copy the Channel ID at the bottom. Then type /invite @AI Analyst in that channel." },
+    ],
+  },
   teams: { name: "Microsoft Teams", fields: [{ name: "TEAMS_WEBHOOK_URL", label: "Teams workflow link", help: "In Teams, open Workflows and choose \"Post to a chat when a webhook request is received\" (or the channel version), finish the steps and copy the link. If Workflows is missing, your IT team has switched it off; use email for now." }] },
   google_chat: { name: "Google Chat", fields: [{ name: "GOOGLE_CHAT_WEBHOOK_URL", label: "Google Chat webhook link", help: "In a space only you are in: the space name, Apps & integrations, Webhooks, Add, copy the link." }] },
   telegram: { name: "Telegram", fields: [{ name: "TELEGRAM_BOT_TOKEN", label: "Telegram bot token", help: "In Telegram, message @BotFather, send /newbot, pick a name, and paste the token it gives you." }] },
@@ -105,6 +112,12 @@ async function Body() {
           Goes only to you{settings.channel === "email" ? <> at <b>{settings.reportEmail ?? "the email in your settings"}</b></> : null}. Change the channel in your settings.
         </p>
         <div className="flex flex-col gap-4">
+          {settings.channel === "slack" && (
+            <div className="rounded-xl bg-neutral-50 p-3 text-sm">
+              <p className="mb-2">Create your Slack bot in one paste: at api.slack.com/apps press Create New App, choose From a manifest, pick your workspace, paste this, and press Create.</p>
+              <CopyField label="Slack app manifest" value={slackManifest(origin)} />
+            </div>
+          )}
           {CHANNEL_HELP[settings.channel].fields.map((f) => <SaveConnection key={f.name} {...f} saved={masked(f.name)} />)}
           {settings.channel === "telegram" && secret("TELEGRAM_BOT_TOKEN", conn) && (
             <div className="rounded-xl bg-neutral-50 p-3 text-sm">
@@ -139,8 +152,8 @@ async function Body() {
             <CopyField label="Your connector link" value={`${origin}/api/mcp/${mcpToken()}`} />
           </div>
           <div>
-            <h3 className="text-sm font-semibold">On your dashboard and in Telegram</h3>
-            <p className="mb-2 mt-1 text-xs text-neutral-600">Needs one API key, billed by use (usually a few cents a day). This is separate from a Claude or ChatGPT subscription.</p>
+            <h3 className="text-sm font-semibold">In Slack, on your dashboard and in Telegram</h3>
+            <p className="mb-2 mt-1 text-xs text-neutral-600">Needs one API key, billed by use (usually a few cents a day). This is separate from a Claude or ChatGPT subscription. In Slack, @mention AI Analyst in a channel it is in, or message it directly, and it answers in the thread.</p>
             <div className="flex flex-col gap-3">
               <SaveConnection name="ANTHROPIC_API_KEY" label="Anthropic API key" help="console.anthropic.com, API Keys, Create Key." saved={masked("ANTHROPIC_API_KEY")} />
               <SaveConnection name="OPENAI_API_KEY" label="or OpenAI API key" help="platform.openai.com, API keys, Create new secret key." saved={masked("OPENAI_API_KEY")} />
@@ -167,6 +180,15 @@ function Section({ id, title, children }: { id: string; title: string; children:
       {children}
     </section>
   );
+}
+
+function slackManifest(origin: string) {
+  return JSON.stringify({
+    display_information: { name: "AI Analyst", description: "Your KPIs every morning, and answers when you ask." },
+    features: { bot_user: { display_name: "AI Analyst", always_online: true }, app_home: { messages_tab_enabled: true, messages_tab_read_only_enabled: false } },
+    oauth_config: { scopes: { bot: ["app_mentions:read", "chat:write", "im:history"] } },
+    settings: { event_subscriptions: { request_url: `${origin}/api/slack/events`, bot_events: ["app_mention", "message.im"] }, org_deploy_enabled: false, socket_mode_enabled: false, token_rotation_enabled: false },
+  });
 }
 
 function maskedValue(name: string, conn: Connections) {

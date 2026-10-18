@@ -8,7 +8,7 @@ export function secret(name: string, connections: Connections): string | undefin
 
 export const channelNeeds: Record<Channel, string[]> = {
   email: ["RESEND_API_KEY"],
-  slack: ["SLACK_WEBHOOK_URL"],
+  slack: [], // a bot token plus channel, or an incoming webhook link (checked below)
   teams: ["TEAMS_WEBHOOK_URL"],
   google_chat: ["GOOGLE_CHAT_WEBHOOK_URL"],
   telegram: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"],
@@ -16,6 +16,9 @@ export const channelNeeds: Record<Channel, string[]> = {
 
 export function channelReady(settings: Settings, connections: Connections): { ready: boolean; missing: string[] } {
   const missing = channelNeeds[settings.channel].filter((n) => !secret(n, connections));
+  if (settings.channel === "slack" && !secret("SLACK_WEBHOOK_URL", connections) && !(secret("SLACK_BOT_TOKEN", connections) && secret("SLACK_CHANNEL_ID", connections))) {
+    missing.push("SLACK_BOT_TOKEN and SLACK_CHANNEL_ID (or SLACK_WEBHOOK_URL)");
+  }
   if (settings.channel === "email" && !settings.reportEmail) missing.push("your email address in settings");
   return { ready: missing.length === 0, missing };
 }
@@ -40,8 +43,20 @@ export async function deliver(settings: Settings, connections: Connections, repo
       });
       return check(res, "Email");
     }
-    case "slack":
+    case "slack": {
+      // Prefer the bot (it can also answer questions); fall back to an incoming webhook.
+      if (s("SLACK_BOT_TOKEN") && s("SLACK_CHANNEL_ID")) {
+        const res = await fetch("https://slack.com/api/chat.postMessage", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${s("SLACK_BOT_TOKEN")}`, "Content-Type": "application/json; charset=utf-8" },
+          body: JSON.stringify({ channel: s("SLACK_CHANNEL_ID"), text: "```" + report.text + "```" }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!data.ok) throw new Error(`Slack said ${data.error ?? res.status}${data.error === "not_in_channel" ? ": invite the bot to the channel with /invite @AI Analyst" : ""}`);
+        return "Slack: sent";
+      }
       return check(await post(s("SLACK_WEBHOOK_URL")!, { text: "```" + report.text + "```" }), "Slack");
+    }
     case "google_chat":
       return check(await post(s("GOOGLE_CHAT_WEBHOOK_URL")!, { text: "```" + report.text + "```" }), "Google Chat");
     case "teams":

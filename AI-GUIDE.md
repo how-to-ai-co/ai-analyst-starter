@@ -56,6 +56,10 @@ For any other tool, pick one:
 2. **A new source file** (Claude Code or Codex), below.
 3. **A published spreadsheet** the tool exports into on a schedule, with `csv_url`.
 
+## Slack bot
+
+The Setup page gives a one-paste Slack app manifest. The member creates the app from it, installs it, and saves `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET` and `SLACK_CHANNEL_ID` on Setup, then types `/invite @AI Analyst` in that channel. The morning report posts there, and anyone in the channel can @mention the bot (or message it directly) to ask about the KPIs; it answers in the thread. Answers need an Anthropic or OpenAI key. Set `SLACK_ALLOWED_USERS` to a comma-separated list of Slack user IDs to limit who gets answers.
+
 ## Changing the report time on Vercel
 
 The free plan runs one daily job. Replace the `schedule` in `vercel.json` with the line shown on the Setup page (it converts the member's local hour to UTC) and commit. On Netlify, nothing to change: it checks hourly.
