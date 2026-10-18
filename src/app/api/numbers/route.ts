@@ -26,7 +26,8 @@ export async function POST(req: Request) {
         if (added === 0) problem = "No rows matched. Use a date column plus a column named after each KPI, or pick one KPI and upload date and value.";
       } else {
         const kpi = kpis.find((k) => k.id === body.kpiId);
-        const date = toDate(String(body.date ?? "")) ?? new Date().toISOString().slice(0, 10);
+        const tz = s.settings?.timezone ?? "UTC";
+        const date = toDate(String(body.date ?? "")) ?? new Date().toLocaleDateString("en-CA", { timeZone: tz });
         const value = toNumber(String(body.value ?? ""));
         if (!kpi) problem = "Pick a KPI.";
         else if (value === null) problem = "Type a number, like 12480 or 3.5.";

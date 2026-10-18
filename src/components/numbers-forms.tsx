@@ -7,7 +7,7 @@ type Row = { id: string; name: string; format: string; points: number; lastDate:
 
 export function NumbersForms({ kpis, canLink }: { kpis: Row[]; canLink: boolean }) {
   const router = useRouter();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString("en-CA"); // local YYYY-MM-DD
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [csv, setCsv] = useState("");
   const [uploadKpi, setUploadKpi] = useState("");
